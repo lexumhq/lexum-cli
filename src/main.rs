@@ -17,6 +17,35 @@ fn main() {
         return;
     }
 
+    use serde::Deserialize;
+
+    #[derive(Deserialize, Default)]
+    struct VedConfig {
+        run: Option<RunConfig>,
+    }
+
+    #[derive(Deserialize)]
+    struct RunConfig {
+        max_cycles: Option<usize>,
+        gas_limit: Option<usize>,
+    }
+
+    let mut max_cycles_cfg = 100;
+    let mut gas_limit_cfg = 1000;
+
+    if let Ok(yaml_contents) = std::fs::read_to_string("ved.yaml") {
+        if let Ok(config) = serde_yaml::from_str::<VedConfig>(&yaml_contents) {
+            if let Some(run_cfg) = config.run {
+                if let Some(c) = run_cfg.max_cycles {
+                    max_cycles_cfg = c;
+                }
+                if let Some(g) = run_cfg.gas_limit {
+                    gas_limit_cfg = g;
+                }
+            }
+        }
+    }
+
     match args[1].as_str() {
         "view-trace" => {
             if args.len() < 3 {
@@ -108,6 +137,8 @@ fn main() {
                         let default_trans_name = if let Some(trans) = first_trans { trans.name.clone() } else { "run".to_string() };
 
                         let boot_msg = Message {
+                            id: "boot_0".to_string(),
+                            source_domain: "SYSTEM_BOOT".to_string(),
                             target_domain: start_domain.to_string(),
                             payload: default_trans_name,
                             priority: 0,
@@ -121,14 +152,14 @@ fn main() {
                     let mut scheduler = Scheduler::new(registry).with_snapshots(snapshot_mgr);
                     println!("\n================ SCHEDULER START ================");
                     
-                    let mut max_cycles = 100;
+                    let mut max_cycles = max_cycles_cfg;
                     if args.len() > 3 {
                         if let Ok(c) = args[3].parse::<usize>() {
                             max_cycles = c;
                         }
                     }
 
-                    let run_metrics = scheduler.execute_until_quiescent(max_cycles, 1000);
+                    let run_metrics = scheduler.execute_until_quiescent(max_cycles, gas_limit_cfg);
                     for line in run_metrics.trace {
                         println!("{}", line);
                     }
@@ -146,7 +177,7 @@ fn main() {
                     println!("[CLI] Execution complete. Quiescence reached.");
                 }
                 Err(e) => {
-                    println!("Error during compilation:\n{}", e);
+                    println!("Error during compilation:\n{:?}", e);
                 }
             }
         }
