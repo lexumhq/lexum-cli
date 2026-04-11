@@ -1,3 +1,4 @@
+mod formatter;
 use std::env;
 
 use ved_runtime::domain_registry::{DomainInstance, DomainRegistry};
@@ -150,31 +151,83 @@ fn main() {
                     }
 
                     let mut scheduler = Scheduler::new(registry).with_snapshots(snapshot_mgr);
-                    println!("\n================ SCHEDULER START ================");
                     
                     let mut max_cycles = max_cycles_cfg;
-                    if args.len() > 3 {
-                        if let Ok(c) = args[3].parse::<usize>() {
+                    let mut output_format = "story";
+                    
+                    for arg in args.iter().skip(3) {
+                        if arg.starts_with("--format=") {
+                            output_format = arg.split('=').nth(1).unwrap_or("story");
+                        } else if let Ok(c) = arg.parse::<usize>() {
                             max_cycles = c;
                         }
                     }
 
-                    let run_metrics = scheduler.execute_until_quiescent(max_cycles, gas_limit_cfg);
-                    for line in run_metrics.trace {
-                        println!("{}", line);
+                    match output_format {
+                        "raw" => println!("\n================ SCHEDULER START ================"),
+                        _ => {
+                            // The formatter prints its own beautiful boot sequences natively.
+                        }
                     }
-                    println!("\n[CLI] Execution Metrics: Converged: {}, Steps: {}, Lo-Pri Executed: {}, Warnings: {}", run_metrics.converged, run_metrics.steps, run_metrics.low_priority_executed, run_metrics.warning_detected);
+
+                    let run_metrics = scheduler.execute_until_quiescent(max_cycles, gas_limit_cfg);
+                    
+                    match output_format {
+                        "raw" => {
+                            for line in run_metrics.trace {
+                                println!("{}", line);
+                            }
+                            println!("\n[CLI] Execution Metrics: Converged: {}, Steps: {}, Lo-Pri Executed: {}, Warnings: {}", run_metrics.converged, run_metrics.steps, run_metrics.low_priority_executed, run_metrics.warning_detected);
+                            println!("================ SCHEDULER HALT ================\n");
+                            println!("[CLI] Execution complete. Quiescence reached.");
+                        }
+                        _ => {
+                            let mut formatter = formatter::StoryFormatter::new();
+                            let formatted_lines = formatter.format_trace(&scheduler.tracer.events);
+                            for line in formatted_lines {
+                                println!("{}", line);
+                            }
+                            
+                            println!("\n---------------- FINAL ----------------\n");
+                            use colored::Colorize;
+                            if run_metrics.converged {
+                                println!("{}", "✔ System converged".green().bold());
+                            } else {
+                                println!("{}", "✖ System failed to converge".red().bold());
+                            }
+                            println!("∑ Total cycles: {}", run_metrics.steps);
+                            if is_resumed {
+                                println!("▣ Snapshot loaded & resaved");
+                            } else {
+                                println!("▣ Snapshot saved");
+                            }
+                            let trace_file = format!("{}.trace.json", source_path);
+                            println!("☶ Trace saved: {}", trace_file);
+                            
+                            // Determinism Check
+                            use std::collections::hash_map::DefaultHasher;
+                            use std::hash::{Hash, Hasher};
+                            let mut hasher = DefaultHasher::new();
+                            for ev in &scheduler.tracer.events {
+                                ev.cycle.hash(&mut hasher);
+                                ev.domain.hash(&mut hasher);
+                                ev.action.hash(&mut hasher);
+                                ev.details.hash(&mut hasher);
+                            }
+                            let hash_val = hasher.finish();
+                            println!("\n⟳ Determinism Check:");
+                            println!("Run Hash: {:x}", hash_val);
+                            println!();
+                        }
+                    }
                     
                     let trace_file = format!("{}.trace.json", source_path);
                     let json_trace = scheduler.tracer.dump_json();
                     if let Err(e) = std::fs::write(&trace_file, json_trace) {
-                        println!("[CLI] Error writing trace file: {}", e);
+                        if output_format == "raw" { println!("[CLI] Error writing trace file: {}", e); }
                     } else {
-                        println!("[CLI] Wrote execution trace to {}", trace_file);
+                        if output_format == "raw" { println!("[CLI] Wrote execution trace to {}", trace_file); }
                     }
-
-                    println!("================ SCHEDULER HALT ================\n");
-                    println!("[CLI] Execution complete. Quiescence reached.");
                 }
                 Err(e) => {
                     println!("Error during compilation:\n{:?}", e);
