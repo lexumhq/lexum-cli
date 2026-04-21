@@ -1,3 +1,3 @@
 run:
-  max_cycles: 200
-  gas_limit: 5000
+  max_cycles: 2000000
+  gas_limit: 2000000

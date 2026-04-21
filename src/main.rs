@@ -192,6 +192,8 @@ fn main() {
                             use colored::Colorize;
                             if run_metrics.converged {
                                 println!("{}", "✔ System converged".green().bold());
+                            } else if run_metrics.oscillating {
+                                println!("{}", "⚠ System Oscillating (Failed to converge naturally)".yellow().bold());
                             } else {
                                 println!("{}", "✖ System failed to converge".red().bold());
                             }
