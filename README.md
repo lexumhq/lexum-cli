@@ -1,13 +1,13 @@
-# ved-cli
+# Lexum-cli
 
-Command-line interface for interacting with Ved programs and runtime.
+Command-line interface for interacting with Lexum programs and runtime.
 
 ## Overview
 
-`ved-cli` provides developer tooling for:
+`Lexum-cli` provides developer tooling for:
 
-- compiling Ved source files into executable bundles
-- launching the Ved runtime
+- compiling Lexum source files into executable bundles
+- launching the Lexum runtime
 - replaying deterministic execution journals
 - inspecting convergence behaviour and runtime state
 
@@ -16,10 +16,10 @@ controls for orchestration workflows.
 
 ## Planned Commands
 
-- `ved compile`
-- `ved run`
-- `ved replay`
-- `ved inspect`
+- `Lexum compile`
+- `Lexum run`
+- `Lexum replay`
+- `Lexum inspect`
 
 ## Design Goals
 

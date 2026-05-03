@@ -1,20 +1,21 @@
 mod formatter;
 use std::env;
 
-use ved_runtime::domain_registry::{DomainInstance, DomainRegistry};
-use ved_runtime::scheduler::Scheduler;
-use ved_runtime::messaging::Message;
-use ved_runtime::persistence::SnapshotManager;
+use Lexum_runtime::domain_registry::{DomainInstance, DomainRegistry};
+use Lexum_runtime::scheduler::Scheduler;
+use Lexum_runtime::messaging::Message;
+use Lexum_runtime::persistence::SnapshotManager;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        println!("ved <command>");
+        println!("lex <command>");
         println!("Commands:");
-        println!("  compile <file.ved>       - Compile a Ved file to bytecode");
-        println!("  run <file.ved>           - Run a Ved file directly");
-        println!("  view-trace <trace.json>  - View an execution trace");
+        println!("  plan <file.lex>       - Compile a Lexum file and output deterministic plan");
+        println!("  apply <file.lex>      - Execute a Lexum file directly on the deterministic runtime");
+        println!("  validate <file.lex>   - Runs strict linting and semantic checks");
+        println!("  trace <trace.json>    - View an execution trace");
         return;
     }
 
@@ -34,7 +35,7 @@ fn main() {
     let mut max_cycles_cfg = 100;
     let mut gas_limit_cfg = 1000;
 
-    if let Ok(yaml_contents) = std::fs::read_to_string("ved.yaml") {
+    if let Ok(yaml_contents) = std::fs::read_to_string("Lexum.yaml") {
         if let Ok(config) = serde_yaml::from_str::<VedConfig>(&yaml_contents) {
             if let Some(run_cfg) = config.run {
                 if let Some(c) = run_cfg.max_cycles {
@@ -48,9 +49,9 @@ fn main() {
     }
 
     match args[1].as_str() {
-        "view-trace" => {
+        "trace" => {
             if args.len() < 3 {
-                println!("Error: Missing trace file.\nUsage: ved view-trace <file.trace.json>");
+                println!("Error: Missing trace file.\nUsage: lex trace <file.trace.json>");
                 return;
             }
             let trace_path = &args[2];
@@ -60,7 +61,7 @@ fn main() {
                 std::process::exit(1);
             });
             
-            match ved_tracer::Tracer::format_trace_from_json(&content) {
+            match Lexum_tracer::Tracer::format_trace_from_json(&content) {
                 Ok(lines) => {
                     println!("\n--- EXECUTION TRACE VIEW ---");
                     for line in lines {
@@ -73,9 +74,9 @@ fn main() {
                 }
             }
         }
-        "run" => {
+        "apply" => {
             if args.len() < 3 {
-                println!("Error: Missing source file.\nUsage: ved run <file.ved>");
+                println!("Error: Missing source file.\nUsage: lex apply <file.lex>");
                 return;
             }
             let source_path = &args[2];
@@ -86,7 +87,7 @@ fn main() {
             });
 
             println!("[CLI] Compiling...");
-            match ved_compiler::compile_source(&source) {
+            match Lexum_compiler::compile_source(&source) {
                 Ok(program) => {
                     println!("[CLI] Compilation successful. Initiating Runtime.");
                     let mut registry = DomainRegistry::new();
@@ -236,30 +237,44 @@ fn main() {
                 }
             }
         }
-        "compile" => {
+        "plan" => {
             if args.len() < 3 {
-                println!("Error: Missing source file.\nUsage: ved compile <file.ved>");
+                println!("Error: Missing source file.\nUsage: lex plan <file.lex>");
                 return;
             }
             let source_path = &args[2];
             let source = std::fs::read_to_string(source_path).unwrap();
-            match ved_compiler::compile_source(&source) {
+            match Lexum_compiler::compile_source(&source) {
                 Ok(program) => {
-                    println!("[CLI] Compilation successful.");
-                    use ved_compiler::codegen::BinaryPacker;
+                    println!("[CLI] Plan successful. Outputting Deterministic Plan:");
+                    use Lexum_compiler::codegen::BinaryPacker;
                     let bytes = BinaryPacker::serialize(&program);
-                    let out_path = if source_path.ends_with(".ved") {
-                        source_path.replace(".ved", ".vedc")
+                    let out_path = if source_path.ends_with(".lex") {
+                        source_path.replace(".lex", ".lexc")
                     } else {
-                        format!("{}.vedc", source_path)
+                        format!("{}.lexc", source_path)
                     };
                     
                     match std::fs::write(&out_path, &bytes) {
-                        Ok(_) => println!("[CLI] Emitted raw bytecode binary to: {} ({} bytes)", out_path, bytes.len()),
+                        Ok(_) => println!("[CLI] Emitted raw bytecode binary plan to: {} ({} bytes)", out_path, bytes.len()),
                         Err(e) => println!("[CLI] Critical Error: Failed to write {}: {}", out_path, e),
                     }
                 },
-                Err(e) => println!("Error during compilation:\n{:?}", e),
+                Err(e) => println!("Error during planning:\n{:?}", e),
+            }
+        }
+        "validate" => {
+            if args.len() < 3 {
+                println!("Error: Missing source file.\nUsage: lex validate <file.lex>");
+                return;
+            }
+            let source_path = &args[2];
+            let source = std::fs::read_to_string(source_path).unwrap();
+            match Lexum_compiler::compile_source(&source) {
+                Ok(_) => {
+                    println!("[CLI] Validation successful. The .lex file is syntactically and semantically valid.");
+                },
+                Err(e) => println!("Error during validation:\n{:?}", e),
             }
         }
         _ => println!("Unknown command: {}", args[1]),

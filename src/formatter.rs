@@ -1,4 +1,4 @@
-use ved_tracer::TraceEvent;
+use Lexum_tracer::TraceEvent;
 use colored::*;
 use std::collections::HashMap;
 
@@ -15,7 +15,7 @@ impl StoryFormatter {
 
     pub fn format_trace(&mut self, events: &[TraceEvent]) -> Vec<String> {
         let mut lines = Vec::new();
-        lines.push("================ VED EXECUTION =================".bright_white().bold().to_string());
+        lines.push("================ Lexum EXECUTION =================".bright_white().bold().to_string());
         
         // Setup initial boot message manually or expect it to be inferred
         // Since we don't have Boot explicit in TraceEvent easily, we process cycles.

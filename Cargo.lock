@@ -3,6 +3,53 @@
 version = 4
 
 [[package]]
+name = "Lexum-cli"
+version = "0.1.0"
+dependencies = [
+ "Lexum-compiler",
+ "Lexum-runtime",
+ "Lexum-tracer",
+ "clap",
+ "colored",
+ "serde",
+ "serde_yaml",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "Lexum-compiler"
+version = "0.1.0"
+dependencies = [
+ "Lexum-ir",
+ "miette",
+ "thiserror",
+]
+
+[[package]]
+name = "Lexum-ir"
+version = "0.1.0"
+
+[[package]]
+name = "Lexum-runtime"
+version = "0.1.0"
+dependencies = [
+ "Lexum-ir",
+ "Lexum-tracer",
+ "rand",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "Lexum-tracer"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -745,53 +792,6 @@ name = "valuable"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
-
-[[package]]
-name = "ved-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "colored",
- "serde",
- "serde_yaml",
- "tracing",
- "tracing-subscriber",
- "ved-compiler",
- "ved-runtime",
- "ved-tracer",
-]
-
-[[package]]
-name = "ved-compiler"
-version = "0.1.0"
-dependencies = [
- "miette",
- "thiserror",
- "ved-ir",
-]
-
-[[package]]
-name = "ved-ir"
-version = "0.1.0"
-
-[[package]]
-name = "ved-runtime"
-version = "0.1.0"
-dependencies = [
- "rand",
- "serde",
- "serde_json",
- "ved-ir",
- "ved-tracer",
-]
-
-[[package]]
-name = "ved-tracer"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "wasip2"
