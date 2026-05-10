@@ -12,9 +12,9 @@ fn main() {
     if args.len() < 2 {
         println!("lex <command>");
         println!("Commands:");
-        println!("  plan <file.lex>       - Compile a Lexum file and output deterministic plan");
-        println!("  apply <file.lex>      - Execute a Lexum file directly on the deterministic runtime");
-        println!("  validate <file.lex>   - Runs strict linting and semantic checks");
+        println!("  plan <file.lxm>       - Compile a Lexum file and output deterministic plan");
+        println!("  apply <file.lxm>      - Execute a Lexum file directly on the deterministic runtime");
+        println!("  validate <file.lxm>   - Runs strict linting and semantic checks");
         println!("  trace <trace.json>    - View an execution trace");
         return;
     }
@@ -76,7 +76,7 @@ fn main() {
         }
         "apply" => {
             if args.len() < 3 {
-                println!("Error: Missing source file.\nUsage: lex apply <file.lex>");
+                println!("Error: Missing source file.\nUsage: lex apply <file.lxm>");
                 return;
             }
             let source_path = &args[2];
@@ -239,7 +239,7 @@ fn main() {
         }
         "plan" => {
             if args.len() < 3 {
-                println!("Error: Missing source file.\nUsage: lex plan <file.lex>");
+                println!("Error: Missing source file.\nUsage: lex plan <file.lxm>");
                 return;
             }
             let source_path = &args[2];
@@ -249,10 +249,10 @@ fn main() {
                     println!("[CLI] Plan successful. Outputting Deterministic Plan:");
                     use Lexum_compiler::codegen::BinaryPacker;
                     let bytes = BinaryPacker::serialize(&program);
-                    let out_path = if source_path.ends_with(".lex") {
-                        source_path.replace(".lex", ".lexc")
+                    let out_path = if source_path.ends_with(".lxm") {
+                        source_path.replace(".lxm", ".lxmc")
                     } else {
-                        format!("{}.lexc", source_path)
+                        format!("{}.lxmc", source_path)
                     };
                     
                     match std::fs::write(&out_path, &bytes) {
@@ -265,14 +265,14 @@ fn main() {
         }
         "validate" => {
             if args.len() < 3 {
-                println!("Error: Missing source file.\nUsage: lex validate <file.lex>");
+                println!("Error: Missing source file.\nUsage: lex validate <file.lxm>");
                 return;
             }
             let source_path = &args[2];
             let source = std::fs::read_to_string(source_path).unwrap();
             match Lexum_compiler::compile_source(&source) {
                 Ok(_) => {
-                    println!("[CLI] Validation successful. The .lex file is syntactically and semantically valid.");
+                    println!("[CLI] Validation successful. The .lxm file is syntactically and semantically valid.");
                 },
                 Err(e) => println!("Error during validation:\n{:?}", e),
             }
