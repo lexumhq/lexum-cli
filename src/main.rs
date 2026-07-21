@@ -22,7 +22,7 @@ fn main() {
     use serde::Deserialize;
 
     #[derive(Deserialize, Default)]
-    struct VedConfig {
+    struct LexumConfig {
         run: Option<RunConfig>,
     }
 
@@ -36,7 +36,7 @@ fn main() {
     let mut gas_limit_cfg = 1000;
 
     if let Ok(yaml_contents) = std::fs::read_to_string("Lexum.yaml") {
-        if let Ok(config) = serde_yaml::from_str::<VedConfig>(&yaml_contents) {
+        if let Ok(config) = serde_yaml::from_str::<LexumConfig>(&yaml_contents) {
             if let Some(run_cfg) = config.run {
                 if let Some(c) = run_cfg.max_cycles {
                     max_cycles_cfg = c;
